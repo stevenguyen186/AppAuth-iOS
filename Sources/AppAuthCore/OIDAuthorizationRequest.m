@@ -51,6 +51,11 @@ static NSString *const kScopeKey = @"scope";
  */
 static NSString *const kRedirectURLKey = @"redirect_uri";
 
+/*! @brief Key used to encode the @c callbackURL property for @c NSSecureCoding, and on the URL
+        request.
+ */
+static NSString *const kCallbackURLKey = @"callback_uri";
+
 /*! @brief Key used to encode the @c state property for @c NSSecureCoding, and on the URL request.
  */
 static NSString *const kStateKey = @"state";
@@ -134,6 +139,35 @@ NSString *const OIDOAuthorizationRequestCodeChallengeMethodS256 = @"S256";
            codeChallenge:(nullable NSString *)codeChallenge
      codeChallengeMethod:(nullable NSString *)codeChallengeMethod
     additionalParameters:(nullable NSDictionary<NSString *, NSString *> *)additionalParameters
+  {
+  return [self initWithConfiguration:configuration
+                            clientId:clientID
+                        clientSecret:clientSecret
+                               scope:scope
+                         redirectURL:redirectURL
+                         callbackURL:nil
+                        responseType:responseType
+                               state:state
+                               nonce:nonce
+                        codeVerifier:codeVerifier
+                       codeChallenge:codeChallenge
+                 codeChallengeMethod:codeChallengeMethod
+                additionalParameters:additionalParameters];
+}
+
+- (instancetype)initWithConfiguration:(OIDServiceConfiguration *)configuration
+                clientId:(NSString *)clientID
+            clientSecret:(nullable NSString *)clientSecret
+                   scope:(nullable NSString *)scope
+             redirectURL:(NSURL *)redirectURL
+             callbackURL:(NSURL *)callbackURL
+            responseType:(NSString *)responseType
+                   state:(nullable NSString *)state
+                   nonce:(nullable NSString *)nonce
+            codeVerifier:(nullable NSString *)codeVerifier
+           codeChallenge:(nullable NSString *)codeChallenge
+     codeChallengeMethod:(nullable NSString *)codeChallengeMethod
+    additionalParameters:(nullable NSDictionary<NSString *, NSString *> *)additionalParameters
 {
   self = [super init];
   if (self) {
@@ -142,6 +176,7 @@ NSString *const OIDOAuthorizationRequestCodeChallengeMethodS256 = @"S256";
     _clientSecret = [clientSecret copy];
     _scope = [scope copy];
     _redirectURL = [redirectURL copy];
+    _callbackURL = [callbackURL copy];
     _responseType = [responseType copy];
     if (![[self class] isSupportedResponseType:_responseType]) {
       NSAssert(NO, OIDOAuthUnsupportedResponseTypeMessage, _responseType);
@@ -157,6 +192,36 @@ NSString *const OIDOAuthorizationRequestCodeChallengeMethodS256 = @"S256";
         [[NSDictionary alloc] initWithDictionary:additionalParameters copyItems:YES];
   }
   return self;
+}
+
+- (instancetype)
+   initWithConfiguration:(OIDServiceConfiguration *)configuration
+                clientId:(NSString *)clientID
+            clientSecret:(NSString *)clientSecret
+                  scopes:(nullable NSArray<NSString *> *)scopes
+             redirectURL:(NSURL *)redirectURL
+             callbackURL:(NSURL *)callbackURL
+                   state:(NSString *)state
+            responseType:(NSString *)responseType
+    additionalParameters:(nullable NSDictionary<NSString *, NSString *> *)additionalParameters {
+
+  // generates PKCE code verifier and challenge
+  NSString *codeVerifier = [[self class] generateCodeVerifier];
+  NSString *codeChallenge = [[self class] codeChallengeS256ForVerifier:codeVerifier];
+
+  return [self initWithConfiguration:configuration
+                            clientId:clientID
+                        clientSecret:clientSecret
+                               scope:[OIDScopeUtilities scopesWithArray:scopes]
+                         redirectURL:redirectURL
+                         callbackURL:callbackURL
+                        responseType:responseType
+                               state:state
+                               nonce:[[self class] generateState]
+                        codeVerifier:codeVerifier
+                       codeChallenge:codeChallenge
+                 codeChallengeMethod:OIDOAuthorizationRequestCodeChallengeMethodS256
+                additionalParameters:additionalParameters];
 }
 
 - (instancetype)

@@ -85,6 +85,12 @@ extern NSString *const OIDOAuthorizationRequestCodeChallengeMethodS256;
  */
 @property(nonatomic, readonly, nullable) NSURL *redirectURL;
 
+/*! @brief The client's callback URI.
+    @remarks callback_uri
+    @see https://tools.ietf.org/html/rfc6749#section-3.1.2
+ */
+@property(nonatomic, readonly, nullable) NSURL *callbackURL;
+
 /*! @brief An opaque value used by the client to maintain state between the request and callback.
     @remarks state
     @discussion If this value is not explicitly set, this library will automatically add state and
@@ -203,6 +209,66 @@ extern NSString *const OIDOAuthorizationRequestCodeChallengeMethodS256;
              responseType:(NSString *)responseType
      additionalParameters:(nullable NSDictionary<NSString *, NSString *> *)additionalParameters;
 
+/*! @brief Creates an authorization request with opinionated defaults (a secure @c state, @c nonce,
+        and PKCE with S256 as the @c code_challenge_method).
+    @param configuration The service's configuration.
+    @param clientID The client identifier.
+    @param clientSecret The client secret.
+    @param scopes An array of scopes to combine into a single scope string per the OAuth2 spec.
+    @param redirectURL The client's redirect URI.
+    @param callbackURL The client's callback URI.
+    @param state An opaque value used by the client to maintain state between the request and
+ callback.
+    @param responseType The expected response type.
+    @param additionalParameters The client's additional authorization parameters.
+    @remarks This convenience initializer generates a state parameter and PKCE challenges
+        automatically.
+ */
+- (instancetype)
+    initWithConfiguration:(OIDServiceConfiguration *)configuration
+                 clientId:(NSString *)clientID
+             clientSecret:(nullable NSString *)clientSecret
+                   scopes:(nullable NSArray<NSString *> *)scopes
+              redirectURL:(NSURL *)redirectURL
+              callbackURL:(NSURL *)callbackURL
+                    state:(nullable NSString *)state
+             responseType:(NSString *)responseType
+     additionalParameters:(nullable NSDictionary<NSString *, NSString *> *)additionalParameters;
+
+/*! @brief Previous designated initializer
+    @param configuration The service's configuration.
+    @param clientID The client identifier.
+    @param scope A scope string per the OAuth2 spec (a space-delimited set of scopes).
+    @param redirectURL The client's redirect URI.
+    @param responseType The expected response type.
+    @param state An opaque value used by the client to maintain state between the request and
+        callback.
+    @param nonce String value used to associate a Client session with an ID Token. Can be set to nil
+        if not using OpenID Connect, although pure OAuth servers should ignore params they don't
+        understand anyway.
+    @param codeVerifier The PKCE code verifier. See @c OIDAuthorizationRequest.generateCodeVerifier.
+    @param codeChallenge The PKCE code challenge, calculated from the code verifier such as with
+        @c OIDAuthorizationRequest.codeChallengeS256ForVerifier:.
+    @param codeChallengeMethod The PKCE code challenge method.
+        ::OIDOAuthorizationRequestCodeChallengeMethodS256 when
+        @c OIDAuthorizationRequest.codeChallengeS256ForVerifier: is used to create the code
+        challenge.
+    @param additionalParameters The client's additional authorization parameters.
+ */
+- (instancetype)
+    initWithConfiguration:(OIDServiceConfiguration *)configuration
+                 clientId:(NSString *)clientID
+             clientSecret:(nullable NSString *)clientSecret
+                    scope:(nullable NSString *)scope
+              redirectURL:(nullable NSURL *)redirectURL
+             responseType:(NSString *)responseType
+                    state:(nullable NSString *)state
+                    nonce:(nullable NSString *)nonce
+             codeVerifier:(nullable NSString *)codeVerifier
+            codeChallenge:(nullable NSString *)codeChallenge
+      codeChallengeMethod:(nullable NSString *)codeChallengeMethod
+     additionalParameters:(nullable NSDictionary<NSString *, NSString *> *)additionalParameters;
+
 /*! @brief Designated initializer.
     @param configuration The service's configuration.
     @param clientID The client identifier.
@@ -229,6 +295,7 @@ extern NSString *const OIDOAuthorizationRequestCodeChallengeMethodS256;
              clientSecret:(nullable NSString *)clientSecret
                     scope:(nullable NSString *)scope
               redirectURL:(nullable NSURL *)redirectURL
+              callbackURL:(nullable NSURL *)callbackURL
              responseType:(NSString *)responseType
                     state:(nullable NSString *)state
                     nonce:(nullable NSString *)nonce
